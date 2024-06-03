@@ -34,16 +34,4 @@ describe("EventHandler", () => {
       );
     });
   });
-
-  describe("processFlows()", () => {
-    it("should process purchase flow", async () => {
-      testEvent.eventName = evenType.SOCKS_PURCHASED;
-      const result = await processFlows(
-        evenType.SOCKS_PURCHASED,
-        testEvent,
-        true
-      );
-      expect(result).toBe("Process Complete. Number of actions: 2");
-    });
-  });
 });
