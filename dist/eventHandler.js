@@ -11,6 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.processFlows = exports.handleEvent = exports.evenType = void 0;
 const errors_1 = require("./errors");
+const scheduler_1 = require("./utils/scheduler");
 var evenType;
 (function (evenType) {
     evenType["WEB_SIGN_UP"] = "websiteSignup";
@@ -19,7 +20,7 @@ var evenType;
 })(evenType || (exports.evenType = evenType = {}));
 const flows = {
     signUp: {
-        delay: 7200000,
+        delay: 7200,
         emails: [
             //  This is assumed to always be 1 email
             {
@@ -61,16 +62,27 @@ exports.handleEvent = handleEvent;
 const processFlows = (eventName_1, payload_1, ...args_1) => __awaiter(void 0, [eventName_1, payload_1, ...args_1], void 0, function* (eventName, payload, wait = false) {
     const emails = []; // list of emails to be sent
     if (eventName === evenType.WEB_SIGN_UP) {
-        yield new Promise((resolve) => setTimeout(resolve, flows.signUp.delay));
-        emails.push(...flows.signUp.emails);
+        // await new Promise((resolve) => setTimeout(resolve, flows.signUp.delay));
+        // emails.push(...flows.signUp.emails);
+        yield (0, scheduler_1.scheduleEmail)("i2345", flows.signUp.delay, {
+            userEmail: payload.userEmail,
+            message: flows.signUp.emails[0],
+        });
     }
     if (eventName === evenType.SOCKS_PURCHASED)
-        emails.push(...flows.purchase.emails);
-    Object.values(emails).map((val) => __awaiter(void 0, void 0, void 0, function* () {
-        const t = yield sendEmail(payload.userEmail, val);
-        if (wait)
-            yield new Promise((resolve) => setTimeout(resolve, flows.purchase.delay)); // can set wait to true to wait between purchases
-    }));
+        flows.purchase.emails.map((f) => __awaiter(void 0, void 0, void 0, function* () {
+            yield (0, scheduler_1.scheduleEmail)("i2345", flows.signUp.delay, {
+                userEmail: payload.userEmail,
+                message: f,
+            });
+        }));
+    // emails.push(...flows.purchase.emails);
+    //   Object.values(emails).map(async (val) => {
+    //     // const t = await sendEmail(payload.userEmail, val);
+    //     // if (wait)
+    //     //   await new Promise((resolve) => setTimeout(resolve, flows.purchase.delay)); // can set wait to true to wait between purchases
+    //     await scheduleEmail("i2345");
+    //   });
     return `Process Complete. Number of actions: ${emails.length}`;
 });
 exports.processFlows = processFlows;

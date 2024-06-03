@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { BadRequestError } from "./errors";
+import { TEmailBody, scheduleEmail } from "./utils/scheduler";
 
 export enum evenType {
   WEB_SIGN_UP = "websiteSignup",
@@ -11,14 +12,9 @@ type TEventBody = {
   userEmail: string;
 };
 
-type TEmailBody = {
-  subject: string;
-  body: string;
-};
-
 const flows = {
   signUp: {
-    delay: 7200000,
+    delay: 7200,
     emails: [
       //  This is assumed to always be 1 email
       {
@@ -63,17 +59,28 @@ export const processFlows = async (
 ) => {
   const emails = []; // list of emails to be sent
   if (eventName === evenType.WEB_SIGN_UP) {
-    await new Promise((resolve) => setTimeout(resolve, flows.signUp.delay));
-    emails.push(...flows.signUp.emails);
+    // await new Promise((resolve) => setTimeout(resolve, flows.signUp.delay));
+    // emails.push(...flows.signUp.emails);
+    await scheduleEmail(flows.signUp.delay, {
+      userEmail: payload.userEmail,
+      message: flows.signUp.emails[0],
+    });
   }
   if (eventName === evenType.SOCKS_PURCHASED)
-    emails.push(...flows.purchase.emails);
+    flows.purchase.emails.map(async (f) => {
+      await scheduleEmail(flows.signUp.delay, {
+        userEmail: payload.userEmail,
+        message: f,
+      });
+    });
+  // emails.push(...flows.purchase.emails);
 
-  Object.values(emails).map(async (val) => {
-    const t = await sendEmail(payload.userEmail, val);
-    if (wait)
-      await new Promise((resolve) => setTimeout(resolve, flows.purchase.delay)); // can set wait to true to wait between purchases
-  });
+  //   Object.values(emails).map(async (val) => {
+  //     // const t = await sendEmail(payload.userEmail, val);
+  //     // if (wait)
+  //     //   await new Promise((resolve) => setTimeout(resolve, flows.purchase.delay)); // can set wait to true to wait between purchases
+  //     await scheduleEmail("i2345");
+  //   });
   return `Process Complete. Number of actions: ${emails.length}`;
 };
 
